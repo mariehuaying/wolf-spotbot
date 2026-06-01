@@ -177,6 +177,12 @@ cron.schedule("0 19 * * *", postLeaderboard, {
   timezone: "America/Los_Angeles",
 });
 
+// ─── Health-check server (Railway requires a bound port) ─────────────────────
+const http = require("http");
+http
+  .createServer((_, res) => res.end("ok"))
+  .listen(process.env.PORT || 3000);
+
 // ─── Start ───────────────────────────────────────────────────────────────────
 (async () => {
   await app.start();
