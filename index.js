@@ -184,6 +184,11 @@ http
   .listen(process.env.PORT || 3000);
 
 // ─── Start ───────────────────────────────────────────────────────────────────
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection:", err);
+  process.exit(1);
+});
+
 (async () => {
   await app.start();
   console.log("🐺 Wolf House SpotBot is running!");
