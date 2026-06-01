@@ -1,4 +1,4 @@
-# 🐺 Wolf House SpotBot
+# Wolf House SpotBot
 
 A Slack bot that tracks campus sightings and posts a weekly leaderboard.
 
