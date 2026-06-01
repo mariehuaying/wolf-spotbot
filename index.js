@@ -1,4 +1,12 @@
 require("dotenv").config();
+
+// ─── Health-check server — bind FIRST so Railway sees the port immediately ────
+const http = require("http");
+const PORT = process.env.PORT || 3000;
+http
+  .createServer((_, res) => res.end("ok"))
+  .listen(PORT, () => console.log(`HTTP health-check listening on port ${PORT}`));
+
 const { App } = require("@slack/bolt");
 const cron = require("node-cron");
 const { createClient } = require("@supabase/supabase-js");
@@ -178,12 +186,6 @@ async function postLeaderboard() {
 cron.schedule("0 19 * * *", postLeaderboard, {
   timezone: "America/Los_Angeles",
 });
-
-// ─── Health-check server (Railway requires a bound port) ─────────────────────
-const http = require("http");
-http
-  .createServer((_, res) => res.end("ok"))
-  .listen(process.env.PORT || 3000);
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 process.on("unhandledRejection", (err) => {
