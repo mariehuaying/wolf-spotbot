@@ -2,6 +2,7 @@ require("dotenv").config();
 const { App } = require("@slack/bolt");
 const cron = require("node-cron");
 const { createClient } = require("@supabase/supabase-js");
+const ws = require("ws");
 
 // ─── Clients ────────────────────────────────────────────────────────────────
 const app = new App({
@@ -13,7 +14,8 @@ const app = new App({
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: fetch }, realtime: { transport: ws } }
 );
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
