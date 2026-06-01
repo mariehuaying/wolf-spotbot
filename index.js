@@ -3,9 +3,10 @@ require("dotenv").config();
 // ─── Health-check server — bind FIRST so Railway sees the port immediately ────
 const http = require("http");
 const PORT = process.env.PORT || 3000;
+console.log(`Starting — PORT env is ${PORT}`);
 http
   .createServer((_, res) => res.end("ok"))
-  .listen(PORT, () => console.log(`HTTP health-check listening on port ${PORT}`));
+  .listen(PORT, "0.0.0.0", () => console.log(`HTTP health-check listening on 0.0.0.0:${PORT}`));
 
 const { App } = require("@slack/bolt");
 const cron = require("node-cron");
