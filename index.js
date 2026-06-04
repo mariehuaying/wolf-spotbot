@@ -33,9 +33,19 @@ function getMondayOfCurrentWeek() {
 }
 
 // ─── Listen for spots ────────────────────────────────────────────────────────
-app.message(async ({ message, say, client }) => {
+app.message(async ({ message, client }) => {
+  console.log("[spot] message event:", JSON.stringify({
+    channel: message.channel,
+    user: message.user,
+    text: message.text,
+    files: message.files?.map((f) => ({ mimetype: f.mimetype })),
+  }));
+
   // Only in #spotted channel
-  if (message.channel !== SPOTTED_CHANNEL) return;
+  if (message.channel !== SPOTTED_CHANNEL) {
+    console.log(`[spot] ignored — channel ${message.channel} !== SPOTTED_CHANNEL ${SPOTTED_CHANNEL}`);
+    return;
+  }
 
   const text = message.text || "";
   const hasTrigger = SPOT_REGEX.test(text);
@@ -44,14 +54,21 @@ app.message(async ({ message, say, client }) => {
     message.files &&
     message.files.some((f) => f.mimetype && f.mimetype.startsWith("image/"));
 
-  if (!hasTrigger || !mentionMatch || !hasPhoto) return;
+  console.log("[spot] checks:", { hasTrigger, hasMention: !!mentionMatch, hasPhoto });
+
+  if (!hasTrigger) { console.log("[spot] ignored — no spot trigger word"); return; }
+  if (!mentionMatch) { console.log("[spot] ignored — no @mention"); return; }
+  if (!hasPhoto) { console.log("[spot] ignored — no photo attached"); return; }
 
   const spotterId = message.user;
   const spottedId = mentionMatch[1];
 
+  console.log(`[spot] valid spot: spotter=${spotterId} spotted=${spottedId}`);
+
   // Don't let people spot themselves
   if (spotterId === spottedId) {
-    await say({
+    await client.chat.postMessage({
+      channel: message.channel,
       thread_ts: message.ts,
       text: "👀 You can't spot yourself, sneaky!",
     });
@@ -69,35 +86,38 @@ app.message(async ({ message, say, client }) => {
   });
 
   if (error) {
-    console.error("Supabase insert error:", error);
+    console.error("[spot] Supabase insert error:", error);
     return;
   }
+  console.log("[spot] saved to Supabase");
 
   // Count how many times spottedId has been spotted this week
   const weekStart = getMondayOfCurrentWeek();
-  const { count } = await supabase
+  const { count, error: countError } = await supabase
     .from("spots")
     .select("*", { count: "exact", head: true })
     .eq("spotted_id", spottedId)
     .gte("spotted_at", weekStart);
+  if (countError) console.error("[spot] Supabase count error:", countError);
   const weekCount = count ?? 1;
+  console.log(`[spot] weekCount for ${spottedId}: ${weekCount}`);
 
-  // Reactions
-  await client.reactions.add({
-    channel: message.channel,
-    timestamp: message.ts,
-    name: "eyes",
-  });
-  await client.reactions.add({
-    channel: message.channel,
-    timestamp: message.ts,
-    name: "camera_with_flash",
-  });
+  // Reactions: ✅ 👀 🤝
+  for (const name of ["white_check_mark", "eyes", "handshake"]) {
+    try {
+      await client.reactions.add({ channel: message.channel, timestamp: message.ts, name });
+      console.log(`[spot] added reaction :${name}:`);
+    } catch (err) {
+      console.error(`[spot] reaction :${name}: failed:`, err.message);
+    }
+  }
 
   // Channel message
-  await say({
+  await client.chat.postMessage({
+    channel: message.channel,
     text: `🐺 <@${spotterId}> spotted <@${spottedId}>! That's ${weekCount} spot${weekCount === 1 ? "" : "s"} this week! 🕵️`,
   });
+  console.log("[spot] posted channel message");
 });
 
 // ─── Leaderboard builder ─────────────────────────────────────────────────────
