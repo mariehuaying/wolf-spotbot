@@ -72,7 +72,16 @@ app.message(async ({ message, say, client }) => {
     return;
   }
 
-  // Fun confirmation reactions + message
+  // Count how many times spottedId has been spotted this week
+  const weekStart = getMondayOfCurrentWeek();
+  const { count } = await supabase
+    .from("spots")
+    .select("*", { count: "exact", head: true })
+    .eq("spotted_id", spottedId)
+    .gte("spotted_at", weekStart);
+  const weekCount = count ?? 1;
+
+  // Reactions
   await client.reactions.add({
     channel: message.channel,
     timestamp: message.ts,
@@ -84,9 +93,9 @@ app.message(async ({ message, say, client }) => {
     name: "camera_with_flash",
   });
 
+  // Channel message
   await say({
-    thread_ts: message.ts,
-    text: `📸 Spot confirmed! <@${spotterId}> caught <@${spottedId}> in the wild. This goes on the board! 🕵️`,
+    text: `🐺 <@${spotterId}> spotted <@${spottedId}>! That's ${weekCount} spot${weekCount === 1 ? "" : "s"} this week! 🕵️`,
   });
 });
 
