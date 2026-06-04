@@ -15,7 +15,7 @@ const app = new App({
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY,
-  { global: { fetch: fetch }, realtime: { transport: ws } }
+  { global: { WebSocket: ws.WebSocket } }
 );
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
