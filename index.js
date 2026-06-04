@@ -200,6 +200,13 @@ async function postLeaderboard() {
   });
 }
 
+// ─── Manual leaderboard trigger ──────────────────────────────────────────────
+app.message(/^\s*leaderboard\s*$/i, async ({ message }) => {
+  if (message.channel !== SPOTTED_CHANNEL) return;
+  console.log("[leaderboard] manual trigger by", message.user);
+  await postLeaderboard();
+});
+
 // ─── Schedule: every day at 7PM PT (= 2AM UTC next day in winter, 3AM in summer)
 // Using America/Los_Angeles: 19:00
 cron.schedule("0 19 * * *", postLeaderboard, {
