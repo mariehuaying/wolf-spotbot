@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node index.js"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "@slack/bolt": "^3.17.0",
     "@supabase/supabase-js": "^2.39.0",
