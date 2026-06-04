@@ -20,7 +20,6 @@ const supabase = createClient(
 );
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const SPOT_REGEX = /\bspot(ted|s|ting)?\b/i;
 const SPOTTED_CHANNEL = process.env.SPOTTED_CHANNEL_ID;   // #spotted
 
 function getMondayOfCurrentWeek() {
@@ -48,15 +47,13 @@ app.message(async ({ message, client }) => {
   }
 
   const text = message.text || "";
-  const hasTrigger = SPOT_REGEX.test(text);
   const mentionMatch = text.match(/<@([A-Z0-9]+)>/);
   const hasPhoto =
     message.files &&
     message.files.some((f) => f.mimetype && f.mimetype.startsWith("image/"));
 
-  console.log("[spot] checks:", { hasTrigger, hasMention: !!mentionMatch, hasPhoto });
+  console.log("[spot] checks:", { hasMention: !!mentionMatch, hasPhoto });
 
-  if (!hasTrigger) { console.log("[spot] ignored — no spot trigger word"); return; }
   if (!mentionMatch) { console.log("[spot] ignored — no @mention"); return; }
   if (!hasPhoto) { console.log("[spot] ignored — no photo attached"); return; }
 
@@ -96,11 +93,11 @@ app.message(async ({ message, client }) => {
   const { count, error: countError } = await supabase
     .from("spots")
     .select("*", { count: "exact", head: true })
-    .eq("spotted_id", spottedId)
+    .eq("spotter_id", spotterId)
     .gte("spotted_at", weekStart);
   if (countError) console.error("[spot] Supabase count error:", countError);
   const weekCount = count ?? 1;
-  console.log(`[spot] weekCount for ${spottedId}: ${weekCount}`);
+  console.log(`[spot] weekCount for spotter ${spotterId}: ${weekCount}`);
 
   // Reactions: ✅ 👀 🤝
   for (const name of ["white_check_mark", "eyes", "handshake"]) {
@@ -115,7 +112,7 @@ app.message(async ({ message, client }) => {
   // Channel message
   await client.chat.postMessage({
     channel: message.channel,
-    text: `🐺 <@${spotterId}> spotted <@${spottedId}>! That's ${weekCount} spot${weekCount === 1 ? "" : "s"} this week! 🕵️`,
+    text: `🐺 <@${spotterId}> spotted <@${spottedId}>! <@${spotterId}> has spotted ${weekCount} ${weekCount === 1 ? "person" : "people"} this week! 🕵️`,
   });
   console.log("[spot] posted channel message");
 });
